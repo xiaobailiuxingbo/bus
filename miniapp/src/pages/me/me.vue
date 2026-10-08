@@ -1,214 +1,96 @@
-<script lang="ts" setup>
-import type { IUploadSuccessInfo } from '@/api/types/login'
-import { storeToRefs } from 'pinia'
-import { LOGIN_PAGE } from '@/router/config'
-import { useUserStore } from '@/store'
-import { useTokenStore } from '@/store/token'
-import { useUpload } from '@/utils/uploadFile'
+<script setup lang="ts">
+import type { IMerchant } from '@/api/bus'
+import { onShow } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+import {
+  busApi,
+  loggedIn,
+  loginPassenger,
+  merchantApi,
+  toast,
+} from '@/api/bus'
 
-definePage({
-  style: {
-    navigationBarTitleText: '我的',
-  },
-})
-
-const userStore = useUserStore()
-const tokenStore = useTokenStore()
-// 使用storeToRefs解构userInfo
-const { userInfo } = storeToRefs(userStore)
-
-// #ifndef MP-WEIXIN
-// 上传头像
-const { run: uploadAvatar } = useUpload<IUploadSuccessInfo>(
-  '/upload',
-  {},
-  {
-    onSuccess: (res) => {
-      console.log('h5头像上传成功', res)
-      useUserStore().setUserAvatar(res.url)
-    },
-  },
-)
-// #endif
-
-// 微信小程序下登录
-async function handleLogin() {
-  // #ifdef MP-WEIXIN
-  // 微信登录
-  await tokenStore.wxLogin()
-
-  // #endif
-  // #ifndef MP-WEIXIN
-  uni.navigateTo({
-    url: `${LOGIN_PAGE}?redirect=${encodeURIComponent('/pages/me/me')}`,
-  })
-  // #endif
+definePage({ style: { navigationBarTitleText: '我的' } })
+const merchant = ref<IMerchant>()
+const name = ref('')
+const demo = ref(false)
+async function refresh() {
+  name.value = uni.getStorageSync('bus-passenger')?.nickname || ''
+  demo.value = Boolean(uni.getStorageSync('bus-demo-session'))
+  try {
+    merchant.value = await merchantApi()
+  }
+  catch (e) {
+    toast(e)
+  }
 }
-
-// #ifdef MP-WEIXIN
-
-// 微信小程序下选择头像事件
-function onChooseAvatar(e: any) {
-  console.log('选择头像', e.detail)
-  const { avatarUrl } = e.detail
-  const { run } = useUpload<IUploadSuccessInfo>(
-    '/upload',
-    {},
-    {
-      onSuccess: (res) => {
-        console.log('wx头像上传成功', res)
-        useUserStore().setUserAvatar(res.url)
-      },
-    },
-    avatarUrl,
-  )
-  run()
+async function login() {
+  if (await loginPassenger())
+    refresh()
 }
-// #endif
-// #ifdef MP-WEIXIN
-// 微信小程序下设置用户名
-function getUserInfo(e: any) {
-  console.log(e.detail)
+async function logout() {
+  try {
+    await busApi('/auth/logout', 'POST', {})
+  }
+  catch {}
+  uni.removeStorageSync('bus-passenger-token')
+  uni.removeStorageSync('bus-passenger')
+  uni.removeStorageSync('bus-demo-session')
+  refresh()
 }
-// #endif
-
-// 退出登录
-function handleLogout() {
-  uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // 清空用户信息
-        useTokenStore().logout()
-        // 执行退出登录逻辑
-        uni.showToast({
-          title: '退出登录成功',
-          icon: 'success',
-        })
-        // #ifdef MP-WEIXIN
-        // 微信小程序，去首页
-        // uni.reLaunch({ url: '/pages/index/index' })
-        // #endif
-        // #ifndef MP-WEIXIN
-        // 非微信小程序，去登录页
-        // uni.navigateTo({ url: LOGIN_PAGE })
-        // #endif
-      }
-    },
-  })
-}
+onShow(refresh)
 </script>
 
 <template>
-  <view class="profile-container">
-    <!-- 用户信息区域 -->
-    <view class="user-info-section">
-      <!-- #ifdef MP-WEIXIN -->
-      <button class="avatar-button" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
-        <image :src="userInfo.avatar" mode="scaleToFill" class="h-full w-full" />
+  <view class="bus-page">
+    <view class="bus-hero">
+      <text class="bus-eyebrow">归途 · 乘客服务</text><view class="bus-title">
+        {{ name || "你好，准备出发吗？" }}
+      </view><view class="bus-subtitle">
+        {{
+          name
+            ? "你的预约和乘车安排，都在这里。"
+            : "登录后预约座位，查看你的行程。"
+        }}
+      </view>
+    </view><view v-if="demo" class="bus-demo">
+      当前为开发演示身份，仅用于本地联调。
+    </view><button v-if="!loggedIn()" class="bus-button" @click="login">
+      乘客登录
+    </button><view class="bus-card">
+      <view
+        class="bus-note-line bus-row"
+        @click="uni.switchTab({ url: '/pages/orders/index' })"
+      >
+        <text>我的预约</text><text class="bus-link">查看 →</text>
+      </view><view
+        class="bus-note-line bus-row"
+        @click="merchant && uni.makePhoneCall({ phoneNumber: merchant.phone })"
+      >
+        <text>联系老板</text><text class="bus-link">{{ merchant?.phone }}</text>
+      </view><view class="bus-note-line">
+        <text>乘车须知</text><view class="bus-help">
+          提前10分钟到上车点，保持电话畅通。报到不代表已上车，工作人员会逐人确认。
+        </view>
+      </view><view class="bus-note-line">
+        <text>付款说明</text><view class="bus-help">
+          第一版使用现金或微信转账现场付款。工作人员登记后，预约详情显示“已收款”。
+        </view>
+      </view><view class="bus-note-line">
+        <text>信息使用说明</text><view class="bus-help">
+          姓名和联系电话仅用于预约、通知与乘车核对；定位只用于查找附近上车点，不存储你的行踪。
+        </view>
+      </view>
+    </view><view v-if="name" class="bus-actions">
+      <button
+        v-if="merchant?.demo_login"
+        class="bus-button secondary"
+        @click="login"
+      >
+        切换演示乘客
+      </button><button class="bus-button secondary" @click="logout">
+        退出登录
       </button>
-      <!-- #endif -->
-      <!-- #ifndef MP-WEIXIN -->
-      <view class="avatar-wrapper" @click="uploadAvatar">
-        <image :src="userInfo.avatar" mode="scaleToFill" class="h-full w-full" />
-      </view>
-      <!-- #endif -->
-      <view class="user-details">
-        <!-- #ifdef MP-WEIXIN -->
-        <input
-          v-model="userInfo.username"
-          type="nickname"
-          class="weui-input"
-          placeholder="请输入昵称"
-        >
-        <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
-        <view class="username">
-          {{ userInfo.username }}
-        </view>
-        <!-- #endif -->
-        <view class="user-id">
-          ID: {{ userInfo.userId }}
-        </view>
-      </view>
-    </view>
-
-    <view class="mt-3 break-all px-3">
-      {{ JSON.stringify(userInfo, null, 2) }}
-    </view>
-
-    <view class="mt-20 px-3">
-      <view class="m-auto w-160px text-center">
-        <button v-if="tokenStore.hasLogin" type="warn" class="w-full" @click="handleLogout">
-          退出登录
-        </button>
-        <button v-else type="primary" class="w-full" @click="handleLogin">
-          登录
-        </button>
-      </view>
     </view>
   </view>
 </template>
-
-<style lang="scss" scoped>
-/* 基础样式 */
-.profile-container {
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  // background-color: #f7f8fa;
-}
-/* 用户信息区域 */
-.user-info-section {
-  display: flex;
-  align-items: center;
-  padding: 40rpx;
-  margin: 30rpx 30rpx 20rpx;
-  background-color: #fff;
-  border-radius: 24rpx;
-  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-}
-
-.avatar-wrapper {
-  width: 160rpx;
-  height: 160rpx;
-  margin-right: 40rpx;
-  overflow: hidden;
-  border: 4rpx solid #f5f5f5;
-  border-radius: 50%;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-.avatar-button {
-  height: 160rpx;
-  width: 160rpx;
-  padding: 0;
-  margin-right: 40rpx;
-  overflow: hidden;
-  border: 4rpx solid #f5f5f5;
-  border-radius: 50%;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-.user-details {
-  flex: 1;
-}
-
-.username {
-  margin-bottom: 12rpx;
-  font-size: 38rpx;
-  font-weight: 600;
-  color: #333;
-  letter-spacing: 0.5rpx;
-}
-
-.user-id {
-  font-size: 28rpx;
-  color: #666;
-}
-
-.user-created {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #999;
-}
-</style>

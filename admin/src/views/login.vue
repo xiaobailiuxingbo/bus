@@ -44,7 +44,7 @@
         </div>
       </el-form-item>
       <el-checkbox v-model="loginForm.rememberMe" style="margin: 0 0 25px 0">{{ proxy.$t('login.rememberPassword') }}</el-checkbox>
-      <el-form-item style="float: right">
+      <el-form-item v-if="false" style="float: right">
         <el-button circle :title="proxy.$t('login.social.wechat')" @click="doSocialLogin('wechat')">
           <svg-icon icon-class="wechat" />
         </el-button>
@@ -374,5 +374,23 @@ onMounted(() => {
   .el-login-footer {
     color: rgba(226, 232, 240, 0.65);
   }
+}
+</style>
+
+<style scoped>
+.login {
+  background: radial-gradient(ellipse at 15% 25%, #d2e5d7 0, transparent 50%), #f6f4ee !important;
+}
+.login-form {
+  border-radius: 22px !important;
+  box-shadow: 0 20px 70px #244a3614 !important;
+  padding: 32px !important;
+}
+.title {
+  color: #147d73 !important;
+}
+.login :deep(.el-button--primary) {
+  background: #147d73;
+  border-color: #147d73;
 }
 </style>

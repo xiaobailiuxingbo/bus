@@ -118,6 +118,8 @@ export default defineManifestConfig({
   'quickapp': {},
   /* 小程序特有相关 */
   'mp-weixin': {
+    permission: { 'scope.userLocation': { desc: '用于查找附近上车站点' } },
+    requiredPrivateInfos: ['getLocation'],
     appid: VITE_WX_APPID,
     setting: {
       urlCheck: false,

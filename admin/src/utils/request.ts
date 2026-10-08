@@ -159,6 +159,7 @@ service.interceptors.response.use(
       return Promise.reject(new Error(msg));
     } else if (code !== HttpStatus.SUCCESS) {
       ElNotification.error({ title: msg });
+      if (res.config.url?.startsWith('/bus')) return Promise.reject(new Error(res.data.msg || msg));
       return Promise.reject('error');
     } else {
       return Promise.resolve(res.data);

@@ -16,6 +16,11 @@
     </description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.dromara</groupId>
+            <artifactId>ruoyi-bus</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
         <!-- 微信小程序与支付服务端 SDK；业务接入在客运模块中实现 -->
         <dependency>

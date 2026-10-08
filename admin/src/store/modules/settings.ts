@@ -18,7 +18,7 @@ export const useSettingsStore = defineStore('setting', () => {
     radiusBase: defaultSettings.radiusBase
   });
   const title = ref<string>(defaultSettings.title);
-  const theme = ref<string>(storageSetting.value.theme);
+  const theme = ref<string>(storageSetting.value.theme === '#409EFF' ? defaultSettings.theme : storageSetting.value.theme);
   const sideTheme = ref<string>(storageSetting.value.sideTheme);
   const showSettings = ref<boolean>(defaultSettings.showSettings);
   const tagsView = ref<boolean>(storageSetting.value.tagsView);

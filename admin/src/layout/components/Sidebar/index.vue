@@ -36,7 +36,10 @@ const route = useRoute();
 const appStore = useAppStore();
 const settingsStore = useSettingsStore();
 const permissionStore = usePermissionStore();
-const sidebarRouters = computed<RouteRecordRaw[]>(() => permissionStore.getSidebarRoutes());
+// Keep framework administration available; hide framework demonstrations from the operating product.
+const sidebarRouters = computed<RouteRecordRaw[]>(() =>
+  permissionStore.getSidebarRoutes().filter((r) => ['', '/', '/index', '/bus', '/system'].includes(r.path))
+);
 const showLogo = computed(() => settingsStore.sidebarLogo);
 const sideTheme = computed(() => settingsStore.sideTheme);
 const theme = computed(() => settingsStore.theme);

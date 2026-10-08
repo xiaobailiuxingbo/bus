@@ -22,6 +22,7 @@ onHide(() => {
 </script>
 
 <style lang="scss">
+@import "@/style/bus.scss";
 swiper,
 scroll-view {
   flex: 1;
