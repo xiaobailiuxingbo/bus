@@ -1,0 +1,24 @@
+# 仅用于本机开发，端口只绑定本机；密码与后端 application-dev.yml 一致。
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bus
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - bus-mysql:/var/lib/mysql
+      - ./backend/script/sql/ry_vue_5.X.sql:/docker-entrypoint-initdb.d/01-system.sql:ro
+      - ./backend/script/sql/ry_workflow.sql:/docker-entrypoint-initdb.d/02-workflow.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --requirepass ruoyi123
+    volumes:
+      - bus-redis:/data
+volumes:
+  bus-mysql:
+  bus-redis:

@@ -1,0 +1,16 @@
+# 复制到仓库根目录 .local/application-dev.yml，填写本机密码。
+server:
+  port: 8088
+spring:
+  datasource:
+    dynamic:
+      datasource:
+        master:
+          username: root
+          password: "填写本机数据库密码"
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6380
+      database: 0
+      password: "填写本机Redis密码"
